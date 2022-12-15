@@ -1,1 +1,1 @@
-# Solutions
+#🥑 Foodie-Fi: Solutions
