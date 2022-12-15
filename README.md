@@ -1,1 +1,1 @@
-# Case-study-3-Solutions
+# Solutions
