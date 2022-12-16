@@ -88,6 +88,100 @@ Customer_id 80 started with a trial subscription and continued with a pro monthl
 <summary>
 B. Data Analysis Questions
 </summary>
+  
+### 1. How many customers has Foodie-Fi ever had?
+````sql
+select count(distinct(customer_id)) customer_count
+from dbo.subscriptions
+````
+**Result**  
+|customer_count|
+|---|
+|1000|
+  
+### 2. What is the monthly distribution of trial plan start_date values for our dataset - use the start of the month as the group by value ?
+````sql
+select 
+    MONTH(start_date) month, 
+    count(distinct customer_id) trial_subs
+from dbo.subscriptions s 
+join dbo.plans p  
+on s.plan_id = p.plan_id 
+where plan_name = 'trial'
+group by month(start_date)
+````
+**Result**
+|month|trial_subs|
+|---|---|  
+|1|88|
+|2|68|
+|3|94|
+|4|81|
+|5|88|
+|6|79|
+|7|89|
+|8|88|
+|9|87|
+|10|79|
+|11|75|
+|12|84|
+  
+### 3. What plan start_date values occur after the year 2020 for our dataset? Show the breakdown by count of events for each plan_name ?
+  
+````sql
+with event21 AS
+(
+  SELECT 
+    plan_name,
+    count(1) event_count_2021
+  from dbo.subscriptions s 
+  join dbo.plans p 
+  on s.plan_id = p.plan_id
+  where year(start_date) >= 2021
+  group by plan_name
+),
+event20 AS
+(
+  SELECT 
+    plan_name,
+    count(1) event_count_2020
+  from dbo.subscriptions s 
+  join dbo.plans p 
+  on s.plan_id = p.plan_id
+  where year(start_date) < 2021
+  group by plan_name
+)
+
+select event20.plan_name, event_count_2020, event_count_2021 
+from event20 
+left join event21 
+on event20.plan_name = event21.plan_name
+order by event_count_2020 DESC
+````
+**Result**
+|plan_name|event_count_2020|event_count_2021|    
+|---|---|---|
+|trial|1000|NULL|
+|basic monthly|538|8|
+|pro monthly|479|60|
+|churn|236|71|
+|pro annual|195|63| 
+                               
+### 4. What is the customer count and percentage of customers who have churned rounded to 1 decimal place ?
+  
+### 5. How many customers have churned straight after their initial free trial - what percentage is this rounded to the nearest whole number ?
+  
+### 6. What is the number and percentage of customer plans after their initial free trial ?
+  
+### 7. What is the customer count and percentage breakdown of all 5 plan_name values at 2020-12-31?
+  
+### 8. How many customers have upgraded to an annual plan in 2020 ?
+  
+### 9. How many days on average does it take for a customer to an annual plan from the day they join Foodie-Fi ?
+  
+### 10. Can you further breakdown this average value into 30 day periods (i.e. 0-30 days, 31-60 days etc) ?
+  
+### 11. How many customers downgraded from a pro monthly to a basic monthly plan in 2020 ?
 
 </details>
 
