@@ -168,20 +168,174 @@ order by event_count_2020 DESC
 |pro annual|195|63| 
                                
 ### 4. What is the customer count and percentage of customers who have churned rounded to 1 decimal place ?
-  
+
+````sql
+with churned_cte as
+(select distinct s.*,plan_name
+from dbo.subscriptions s 
+join dbo.plans p 
+on s.plan_id = p.plan_id 
+where plan_name = 'churn')
+
+select 
+    count(*) churn_count,
+    convert(float,round((100.0*count(distinct customer_id)/(select count(distinct customer_id) from dbo.subscriptions)),2)) as churn_percentage
+from churned_cte
+````
+**Result**
+|churn_count|churn_percentage|
+|---|---|
+|307|30.7|
+
 ### 5. How many customers have churned straight after their initial free trial - what percentage is this rounded to the nearest whole number ?
-  
+````sql
+with ranking AS
+(SELECT  s.*,plan_name,
+    ROW_NUMBER() over (partition by customer_id order by start_date) rank_
+from dbo.subscriptions s 
+join dbo.plans p 
+on s.plan_id = p.plan_id)
+ 
+select
+    count(*) churn_count,
+    round(100*count(*) / (select count(distinct customer_id) from dbo.subscriptions),0) churn_percentage
+from ranking
+where plan_name = 'churn' and rank_= 2
+````
+**Result**
+|churn_count|churn_percentage|
+|---|---|
+|92|9|
+
 ### 6. What is the number and percentage of customer plans after their initial free trial ?
+
+````sql
+with ranking AS
+(SELECT  
+    s.*,plan_name,
+    ROW_NUMBER() over (partition by customer_id order by start_date) rank_
+from dbo.subscriptions s 
+join dbo.plans p 
+on s.plan_id = p.plan_id)
+ 
+select
+    plan_name next_plan,
+    count(*) plan_count,
+    convert(float,round(100.0*count(*) / (select count(distinct customer_id) from dbo.subscriptions),2)) plan_percentage
+from ranking
+where 
+        plan_name = 'churn' and rank_= 2
+    or  plan_name = 'basic monthly' and rank_=2
+    or  plan_name = 'pro monthly' and rank_=2
+    or  plan_name = 'pro annual' and rank_=2
+group by plan_name
+order by plan_percentage desc
+````
+**Result**
+|next_plan|plan_count|plan_percentage|    
+|---|---|---|
+|basic monthly|546|54.6|
+|pro monthly|325|32.5|
+|churn|92|9.2|
+|pro annual|37|3.7|
   
 ### 7. What is the customer count and percentage breakdown of all 5 plan_name values at 2020-12-31?
+````sql
+WITH ranked AS 
+(
+  SELECT
+    customer_id,
+    plan_name,
+    RANK() OVER(PARTITION BY customer_id ORDER BY start_date DESC) rank_
+  FROM subscriptions AS s
+  JOIN plans AS p 
+  ON s.plan_id = p.plan_id
+  WHERE start_date <= '2020-12-31' 
+)
+
+SELECT 
+  plan_name,
+  count(*) customer_count, 
+  convert(float,ROUND((100.0*count(*)/(select count(distinct customer_id) from dbo.subscriptions)),2)) percentage_of_plans
+from ranked 
+WHERE rank_ = 1
+group by plan_name
+order by 1
+````
+**Result**
+|plan_name|customer_count|percentage_of_plans|    
+|---|---|---|
+|basic monthly|224|22.4|
+|churn|236|23.6|
+|pro annual|195|19.5|
+|pro monthly|326|32.6|
+|trial|19|1.9|
   
 ### 8. How many customers have upgraded to an annual plan in 2020 ?
-  
+````sql
+SELECT 
+    count(distinct customer_id) pro_annual_customers
+from dbo.subscriptions s  
+join dbo.plans p 
+on s.plan_id = p.plan_id
+where plan_name = 'pro annual' and YEAR(start_date) = 2020
+````
+**Result**
+|pro_annual_customers|
+|---|
+|195|
+
 ### 9. How many days on average does it take for a customer to an annual plan from the day they join Foodie-Fi ?
-  
+````sql
+with annual AS
+(
+select customer_id, start_date annual_date
+from dbo.subscriptions
+where plan_id = 3
+), 
+trial as 
+(
+select customer_id, start_date trial_date
+from dbo.subscriptions
+where plan_id = 0
+)
+
+select 
+    round(AVG(DATEDIFF(day,trial_date,annual_date)),0) avg_days_to_annual
+from trial t 
+join annual a 
+on t.customer_id = a.customer_id
+````
+**Result**
+|avg_days_to_annual|
+|---|
+|104|
+
 ### 10. Can you further breakdown this average value into 30 day periods (i.e. 0-30 days, 31-60 days etc) ?
-  
+````sql
+````
+
 ### 11. How many customers downgraded from a pro monthly to a basic monthly plan in 2020 ?
+````sql
+WITH next_plan_cte AS (
+SELECT 
+  customer_id, 
+  plan_id, 
+  start_date,
+  LEAD(plan_id, 1) OVER(PARTITION BY customer_id ORDER BY plan_id) as next_plan
+FROM dbo.subscriptions)
+
+SELECT 
+  COUNT(*) AS downgraded
+FROM next_plan_cte
+WHERE year(start_date) <= 2021  
+	AND plan_id = 2 
+  AND next_plan = 1
+````
+**Result**
+|downgraded|
+|---|
+|0|
 
 </details>
 
@@ -197,4 +351,47 @@ C. Challenge Payment Question
 D. Outside The Box Questions
 </summary>
 
+### 1. How would you calculate the rate of growth for Foodie-Fi?
+````sql
+WITH next_plan_cte AS (
+SELECT 
+  customer_id, 
+  plan_id, 
+  start_date,
+  LEAD(plan_id, 1) OVER(PARTITION BY customer_id ORDER BY plan_id) as next_plan
+FROM dbo.subscriptions)
+
+SELECT 
+  COUNT(*) AS downgraded
+FROM next_plan_cte
+WHERE year(start_date) <= 2021  
+	AND plan_id = 2 
+  AND next_plan = 1
+````
+**Result**
+|month|year|current_customer_count|past_customer_count|growth_percentage|
+|---|---|---|---|---|
+|1|2020|61|NULL|%|
+|2|2020|70|61|14.75%|
+|3|2020|93|70|32.86%|
+|4|2020|84|93|-9.68%|
+|5|2020|104|84|23.81%|
+|6|2020|105|104|0.96%|
+|7|2020|101|105|-3.81%|
+|8|2020|130|101|28.71%|
+|9|2020|112|130|-13.85%|
+|10|2020|124|112|10.71%|
+|11|2020|99|124|-20.16%|
+|12|2020|109|99|10.1%|
+|1|2021|58|109|-46.79%|
+|2|2021|29|58|-50%|
+|3|2021|24|29|-17.24%|
+|4|2021|20|24|-16.67%|
+
+### 2. What key metrics would you recommend Foodie-Fi management to track over time to assess performance of their overall business?
+### 3. What are some key customer journeys or experiences that you would analyse further to improve customer retention?
+### 4. If the Foodie-Fi team were to create an exit survey shown to customers who wish to cancel their subscription, what questions would you include in the survey?
+### 5. What business levers could the Foodie-Fi team use to reduce the customer churn rate? How would you validate the effectiveness of your ideas?
+
+</details>
 </details>
