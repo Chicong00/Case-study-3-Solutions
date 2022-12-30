@@ -353,20 +353,20 @@ D. Outside The Box Questions
 
 ### 1. How would you calculate the rate of growth for Foodie-Fi?
 ````sql
-WITH next_plan_cte AS (
-SELECT 
-  customer_id, 
-  plan_id, 
-  start_date,
-  LEAD(plan_id, 1) OVER(PARTITION BY customer_id ORDER BY plan_id) as next_plan
-FROM dbo.subscriptions)
-
-SELECT 
-  COUNT(*) AS downgraded
-FROM next_plan_cte
-WHERE year(start_date) <= 2021  
-	AND plan_id = 2 
-  AND next_plan = 1
+with cte as 
+(
+  SELECT 
+    MONTH(s.start_date) month ,
+    YEAR(s.start_date) year,
+    COUNT(distinct customer_id) current_customer_count,
+    lag(COUNT(distinct customer_id),1) over(order by year(start_date),month(s.start_date)) past_customer_count
+  from dbo.subscriptions s 
+  where plan_id != 0 and plan_id != 4
+  group by YEAR(s.start_date), MONTH(s.start_date)
+)
+select *,
+  concat(convert(float,round((100.0*(current_customer_count - past_customer_count)/(past_customer_count)),2)),' %') as growth_percentage 
+from cte
 ````
 **Result**
 |month|year|current_customer_count|past_customer_count|growth_percentage|
