@@ -389,9 +389,44 @@ from cte
 |4|2021|20|24|-16.67%|
 
 ### 2. What key metrics would you recommend Foodie-Fi management to track over time to assess performance of their overall business?
+
+- **Customer growth**: how many customers increase by monthly ? What does the ratio look like?
+- **Conversion rate**: how many customers continue to use after free trial? What does the ratio look like?
+- **Churn rate**: How many customers cancel the subscription by monthly? What does the ratio look like?
+
 ### 3. What are some key customer journeys or experiences that you would analyse further to improve customer retention?
+
+- Customers who cancelled the subscription
+- Customers who upgraded the subscription
+	- From basic monthly to pro monthly
+	- From basic monthly to pro annual
+
 ### 4. If the Foodie-Fi team were to create an exit survey shown to customers who wish to cancel their subscription, what questions would you include in the survey?
+
+- Why do you want to cancel subscription? What is the primary reason ?
+	- Price
+	- Content
+	- Techinical issues
+	- Customer support
+	- Found an alternative
+	- Others (specify)
+- On a 5-point scale, how would you rate your experience?
+- On a 5-point scale, how would you rate the price?
+- Is there anything you want us to change ?
+	- Content (quality and quantity)
+	- Video duration (longer or shorter)
+	- Price
+	- Others (specify)
+	
 ### 5. What business levers could the Foodie-Fi team use to reduce the customer churn rate? How would you validate the effectiveness of your ideas?
+
+- Adjust based on the main reasons leading to the cancellation:
+	- Price: more promotions, more discount seasons, more unique content for memberships
+	- Service quality: work with the relevant department to fix the issue, improve service quality
+	- Found an alternative: do some competitor analysis to see their competitive advantages over us. If necessary, try the product for better experience and evaluation.
+- To validate the effectiveness:
+	- Churn rate
+	- Conversion rate
 
 </details>
 </details>
